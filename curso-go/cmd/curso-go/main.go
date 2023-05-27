@@ -2,9 +2,11 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
+	"runtime"
 	"strconv"
 	"strings"
 
@@ -14,14 +16,16 @@ import (
 )
 
 var reader = bufio.NewReader(os.Stdin)
+var mem1_before, mem2_before, mem1_after, mem2_after runtime.MemStats
 
 func main() {
-
 	http.HandleFunc("/ping", tracer(pingPong))
 	http.HandleFunc("/tuit", tuiter.ReceiveTuit)
 	http.HandleFunc("/timeline", tuiter.Timeline)
 	http.HandleFunc("/vehicles/electrics/info", electric_vehicle.ProcessInfo)
+	http.HandleFunc("/monitor", MonitorRuntime)
 	http.ListenAndServe(":8080", nil)
+	
 }
 
 func pingPong(w http.ResponseWriter, req *http.Request) {
@@ -99,4 +103,44 @@ func ReadOption(reader *bufio.Reader) (int, error) {
 	}
 
 	return option, nil
+}
+
+func MonitorRuntime(w http.ResponseWriter, req *http.Request) {
+	w.Header().Add("content-type", "application/json")
+    m := &runtime.MemStats{}
+    // f, err := os.Create(fmt.Sprintf("mmem.csv"))
+    // if err != nil {
+    //     panic(err)
+    // }
+	
+    // f.WriteString("Allocated;Total Allocated; System Memory;Num Gc;Heap Allocated;Heap System;Heap Objects;Heap Released;\n")
+    
+	// for { 
+    //     f.WriteString(fmt.Sprintf("%d;%d;%d;%d;%d;%d;%d;%d;\n", m.Alloc, m.TotalAlloc, m.Sys, m.NumGC, m.HeapAlloc, m.HeapSys, m.HeapObjects, m.HeapReleased))
+    //     time.Sleep(5 * time.Second)
+    // }
+	runtime.ReadMemStats(m)
+
+	out := map[string]interface{}{}
+	delete(out, "Allocated")
+	delete(out, "Total Allocated;")
+	delete(out, "System Memory")
+	delete(out, "Num Gc")
+	delete(out, "Heap Allocated")
+	delete(out, "Heap System")
+	delete(out, "Heap Objects")
+	delete(out, "Heap Release")
+	
+	out["Allocated"] = m.TotalAlloc
+	out["Total Allocated"] = m.Alloc 
+	out["System Memory"] = m.Sys
+	out["Num Gc"] = m.NumGC
+	out["Heap Allocated"] = m.HeapAlloc 
+	out["Heap System"] =  m.HeapSys
+	out["Heap Objects"] = m.HeapObjects 
+	out["Heap Release"] = m.HeapReleased
+
+	response, _ := json.MarshalIndent(out, "", "\t")
+	fmt.Fprint(w, string(response))
+	w.WriteHeader(200);
 }
