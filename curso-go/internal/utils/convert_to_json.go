@@ -2,11 +2,9 @@ package convert_to_json
 
 import (
 	"encoding/json"
-	"fmt"
 )
 
-func ConvertToJson(data map[string]interface{}) interface{} {
-	response, _ := json.MarshalIndent(data, "", "\t")
-	fmt.Printf("A map with values: %v\n", response)
-	return response
+func ConvertToJson(data any) string {
+	bytes, _ := json.MarshalIndent(data, "", "\t")
+	return string(bytes)
 }
