@@ -2,18 +2,13 @@ package electric_vehicle
 
 import (
 	"encoding/csv"
-	"encoding/json"
 	"fmt"
 	"log"
-	"math/rand"
 	"net/http"
 	"os"
-	"runtime"
-	"testing"
-	"time"
-)
 
-var mem1_before, mem2_before, mem1_after, mem2_after runtime.MemStats
+	"example.com/utils"
+)
 
 type ElectricVehicle struct {
 	Meta string `json:"meta"`
@@ -44,23 +39,12 @@ func ProcessInfo(w http.ResponseWriter, req *http.Request) {
 	// convert records to array of structs
     response := ProcessData(data)
     out := map[string]interface{}{}
-    
-    measure_nothing(&mem2_before, &mem2_after)
-
-    rand.Seed(time.Now().UnixNano())
-
-    tr := testing.Benchmark(BenchmarkNothing)
-
-    out["Allocs/operation"] = tr.AllocsPerOp()
-    out["Byte/operation"] = tr.AllocedBytesPerOp()
-    out["Precise allocs/operation:"] = float64(tr.MemAllocs)/float64(tr.N)
-
     out["electric_vehicle"] = response
 
-    bytes, _ := json.MarshalIndent(out, "", "\t")
+    result := utils.ConvertToJsonInString(out)
 
     // print the array
-    fmt.Fprint(w, string(bytes))
+    fmt.Fprint(w, result)
 
     w.WriteHeader(200);
 }
@@ -118,20 +102,6 @@ func InitChannel() chan string {
 func CloseChannel(chnl chan string){
     fmt.Print("Close Channel")
     close(chnl)
-}
-
-func BenchmarkNothing(b *testing.B) {
-    for i := 0; i < b.N; i++ {
-        measure_nothing(&mem1_before, &mem1_after)
-    }
-}
-
-func measure_nothing(before, after *runtime.MemStats) {
-    runtime.GC()
-    runtime.ReadMemStats(before)
-
-    runtime.GC()
-    runtime.ReadMemStats(after)
 }
 
 //  chnl := InitChannel();

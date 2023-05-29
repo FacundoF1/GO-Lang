@@ -1,10 +1,10 @@
-package convert_to_json
+package utils
 
 import (
 	"encoding/json"
 )
 
-func ConvertToJson(data any) string {
+func ConvertToJsonInString(data any) string {
 	bytes, _ := json.MarshalIndent(data, "", "\t")
 	return string(bytes)
 }

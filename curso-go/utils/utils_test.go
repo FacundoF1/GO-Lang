@@ -1,8 +1,8 @@
-package convert_to_json
+package utils
 
 import (
-	"testing"
 	"fmt"
+	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
