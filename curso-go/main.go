@@ -9,10 +9,11 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"time"
 
 	"example.com/electric_vehicle"
-	"github.com/playsistemico/curso-go/internal/examples"
-	"github.com/playsistemico/curso-go/internal/tuiter"
+	"example.com/examples"
+	"example.com/tuiter"
 )
 
 var reader = bufio.NewReader(os.Stdin)
@@ -24,6 +25,7 @@ func main() {
 	http.HandleFunc("/timeline", tuiter.Timeline)
 	http.HandleFunc("/vehicles/electrics/info", electric_vehicle.ProcessInfo)
 	http.HandleFunc("/monitor", MonitorRuntime)
+	http.HandleFunc("/show-examples", ShowExamples)
 	http.ListenAndServe(":8080", nil)
 	
 }
@@ -34,12 +36,13 @@ func pingPong(w http.ResponseWriter, req *http.Request) {
 
 func tracer(handler func(http.ResponseWriter, *http.Request)) func(http.ResponseWriter, *http.Request) {
 	return func(res http.ResponseWriter, req *http.Request) {
+		res.Header().Add("content-type", "application/json")
 		req.Header.Add("trace", "1")
 		handler(res, req)
 	}
 }
 
-func ShowExamples() {
+func ShowExamples(w http.ResponseWriter, req *http.Request)  {
 	fmt.Println("Please choose which example to run:")
 	fmt.Println("0: Hello world")
 	fmt.Println("1: Values")
@@ -54,11 +57,18 @@ func ShowExamples() {
 	fmt.Println("10: Routines")
 	fmt.Println("11: Defer")
 
-	option, err := ReadOption(reader)
-	if err != nil {
-		fmt.Println("Error, invalid option")
-		return
-	}
+	// option, err := ReadOption(reader)
+	// if err != nil {
+	// 	fmt.Println("Error, invalid option")
+	// 	return
+	// }
+
+	query := req.URL.Query()
+	id, err := strconv.Atoi(query.Get("id"))
+    if err != nil {
+        panic(err)
+    }
+	option := id;
 
 	switch option {
 	case 0:
@@ -89,6 +99,9 @@ func ShowExamples() {
 		fmt.Println("Error, invalid option")
 		return
 	}
+
+	fmt.Fprint(w, option)
+	w.WriteHeader(200);
 }
 
 func ReadOption(reader *bufio.Reader) (int, error) {
@@ -108,17 +121,17 @@ func ReadOption(reader *bufio.Reader) (int, error) {
 func MonitorRuntime(w http.ResponseWriter, req *http.Request) {
 	w.Header().Add("content-type", "application/json")
     m := &runtime.MemStats{}
-    // f, err := os.Create(fmt.Sprintf("mmem.csv"))
-    // if err != nil {
-    //     panic(err)
-    // }
+    f, err := os.Create(fmt.Sprintf("mmem.csv"))
+    if err != nil {
+        panic(err)
+    }
 	
-    // f.WriteString("Allocated;Total Allocated; System Memory;Num Gc;Heap Allocated;Heap System;Heap Objects;Heap Released;\n")
+    f.WriteString("Allocated;Total Allocated; System Memory;Num Gc;Heap Allocated;Heap System;Heap Objects;Heap Released;\n")
     
-	// for { 
-    //     f.WriteString(fmt.Sprintf("%d;%d;%d;%d;%d;%d;%d;%d;\n", m.Alloc, m.TotalAlloc, m.Sys, m.NumGC, m.HeapAlloc, m.HeapSys, m.HeapObjects, m.HeapReleased))
-    //     time.Sleep(5 * time.Second)
-    // }
+ 	for { 
+ 	    f.WriteString(fmt.Sprintf("%d;%d;%d;%d;%d;%d;%d;%d;\n", m.Alloc, m.TotalAlloc, m.Sys, m.NumGC, m.HeapAlloc, m.HeapSys, m.HeapObjects, m.HeapReleased))
+ 	    time.Sleep(5 * time.Second)
+ 	}
 	runtime.ReadMemStats(m)
 
 	out := map[string]interface{}{}
