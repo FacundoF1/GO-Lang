@@ -2,18 +2,18 @@ package main
 
 import (
 	"bufio"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
 	"runtime"
 	"strconv"
 	"strings"
-	"time"
 
 	"example.com/electric_vehicle"
 	"example.com/examples"
 	"example.com/tuiter"
+	"example.com/utils"
+	"example.com/utils/benchmark"
 )
 
 var reader = bufio.NewReader(os.Stdin)
@@ -120,29 +120,23 @@ func ReadOption(reader *bufio.Reader) (int, error) {
 
 func MonitorRuntime(w http.ResponseWriter, req *http.Request) {
 	w.Header().Add("content-type", "application/json")
+
     m := &runtime.MemStats{}
-    f, err := os.Create(fmt.Sprintf("mmem.csv"))
-    if err != nil {
-        panic(err)
-    }
+    // f, err := os.Create(fmt.Sprintf("mmem.csv"))
+    // if err != nil {
+    //     panic(err)
+    // }
 	
-    f.WriteString("Allocated;Total Allocated; System Memory;Num Gc;Heap Allocated;Heap System;Heap Objects;Heap Released;\n")
+    // f.WriteString("Allocated;Total Allocated; System Memory;Num Gc;Heap Allocated;Heap System;Heap Objects;Heap Released;\n")
     
- 	for { 
- 	    f.WriteString(fmt.Sprintf("%d;%d;%d;%d;%d;%d;%d;%d;\n", m.Alloc, m.TotalAlloc, m.Sys, m.NumGC, m.HeapAlloc, m.HeapSys, m.HeapObjects, m.HeapReleased))
- 	    time.Sleep(5 * time.Second)
- 	}
-	runtime.ReadMemStats(m)
+ 	// for { 
+ 	//     f.WriteString(fmt.Sprintf("%d;%d;%d;%d;%d;%d;%d;%d;\n", m.Alloc, m.TotalAlloc, m.Sys, m.NumGC, m.HeapAlloc, m.HeapSys, m.HeapObjects, m.HeapReleased))
+ 	//     time.Sleep(5 * time.Second)
+ 	// }
+	
+	// runtime.ReadMemStats(m)
 
 	out := map[string]interface{}{}
-	delete(out, "Allocated")
-	delete(out, "Total Allocated;")
-	delete(out, "System Memory")
-	delete(out, "Num Gc")
-	delete(out, "Heap Allocated")
-	delete(out, "Heap System")
-	delete(out, "Heap Objects")
-	delete(out, "Heap Release")
 	
 	out["Allocated"] = m.TotalAlloc
 	out["Total Allocated"] = m.Alloc 
@@ -153,7 +147,9 @@ func MonitorRuntime(w http.ResponseWriter, req *http.Request) {
 	out["Heap Objects"] = m.HeapObjects 
 	out["Heap Release"] = m.HeapReleased
 
-	response, _ := json.MarshalIndent(out, "", "\t")
-	fmt.Fprint(w, string(response))
+	out["Benchnmark"] = benchmark.BenchmarkTest()
+
+	response := utils.ConvertToJsonInString(out)
+	fmt.Fprint(w, response)
 	w.WriteHeader(200);
 }

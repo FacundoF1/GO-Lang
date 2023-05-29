@@ -5,6 +5,9 @@ import (
 )
 
 func ConvertToJsonInString(data any) string {
-	bytes, _ := json.MarshalIndent(data, "", "\t")
+	bytes, err := json.MarshalIndent(data, "", "\t")
+	if err != nil {
+        panic(err)
+    }
 	return string(bytes)
 }
